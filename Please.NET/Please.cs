@@ -1,43 +1,61 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Threading;
+using System.Linq;
 
 namespace Please.NET
 {
     public class Please
     {
-        public static void Repeat(int count, Action<int> action)
+        public List<Thread> AllPleaseEvents { get; set; }
+
+        public Please()
         {
-            for (int r = 0; r < count; r++)
-            {
-                Please.Do(() =>
-                {
-                    action(r);
-                });
-            }
+            AllPleaseEvents = new List<Thread>();
         }
 
-        public static void Do(Action action, bool shouldthisbedone = true)
+        public void Do(Action action, bool shouldthisbedone = true)
         {
-            if (shouldthisbedone)
-            {
-                action();
-            }
+            if (!shouldthisbedone) return;
+            var t = new Thread(() => action());
+            this.ThreadTheNeedle(t);
+            t.Start();
         }
 
-        public static void Dont(Action action)
+        public void Dont(Action action)
         {
             Do(action, false);
         }
 
-        public static void PrettyPlease(Action action, bool withCherryOnTop = false)
+        public void PrettyPlease(Action action, bool withCherryOnTop = false)
         {
             Do(action, withCherryOnTop);
         }
 
-        public static void WeatherPermitting(Action action)
+        public void Repeat(int count, Action<int> action)
         {
-            Random r = new Random();
+            for (var r = 0; r < count; r++)
+            {
+                var r1 = r;
+                Do(() => action(r1));
+            }
+        }
 
+        public void WeatherPermitting(Action action)
+        {
+            var r = new Random();
             Do(action, r.Next() % 2 == 0);
+        }
+
+        public bool TellMeIfAllTasksAreCompleted()
+        {
+            return AllPleaseEvents.All(x => !x.IsAlive);
+        }
+
+        private void ThreadTheNeedle(Thread t)
+        {
+            AllPleaseEvents.Add(t);
         }
     }
 }
